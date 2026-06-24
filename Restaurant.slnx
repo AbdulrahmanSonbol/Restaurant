@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Application/">
+    <Project Path="Contracts/Contracts.csproj" />
+    <Project Path="ServiceAbstraction/ServiceAbstraction.csproj" />
+    <Project Path="Services/Services.csproj" />
+  </Folder>
+  <Folder Name="/Core/">
+    <Project Path="Domain/Domain.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="Persistence/Persistence.csproj" />
+  </Folder>
+  <Folder Name="/Presentation/">
+    <Project Path="Presentation/Presentation.csproj" />
+    <Project Path="Restaurant/Restaurant.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="Shared/Shared.csproj" />
+  </Folder>
+</Solution>
