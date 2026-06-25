@@ -7,11 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
     <Folder Include="Filters\" />
     <Folder Include="Sorting\" />
     <Folder Include="Pagination\" />
     <Folder Include="QueryParameters\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
   </ItemGroup>
 
 </Project>
