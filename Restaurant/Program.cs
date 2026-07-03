@@ -33,9 +33,6 @@ builder.Services.AddDbContext<RestaurantIdentityDBContexts>(options =>
 
 builder.Services.AddKeyedScoped<IDataInitializer, IdentityDataInitializer>("Identity");
 
-
-
-
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 {
     options.Password.RequiredLength = 7;
@@ -77,5 +74,28 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+#region Run Identity Data Seeder
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var identityInitializer = services.GetKeyedService<IDataInitializer>("Identity");
+
+        if (identityInitializer != null)
+        {
+            await identityInitializer.InitializeAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Error Identity Data Seed");
+    }
+}
+
+#endregion
 
 app.Run();
