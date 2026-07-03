@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.IdentityData.DBContexts;
 
 #nullable disable
 
-namespace Persistence.IdentityData.Migrations
+namespace Persistence.Data.Migrations
 {
     [DbContext(typeof(RestaurantIdentityDBContexts))]
-    partial class RestaurantIdentityDBContextsModelSnapshot : ModelSnapshot
+    [Migration("20260703165910_AddAddressUserRelationship")]
+    partial class AddAddressUserRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

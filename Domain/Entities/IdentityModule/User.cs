@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Entities.Identityodule
+namespace Domain.Entities.IdentitMyodule
 {
     public class User : IdentityUser<Guid>
     {

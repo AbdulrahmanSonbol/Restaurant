@@ -9,6 +9,10 @@ namespace ServiceAbstraction
     public interface IAuthenticationService
     {
         Task<Result<UserDTO>> LoginAsync (LoginDTO loginDTO);
-        Task<Result<UserDTO>> RegisterAsync(RegisterDTO registerDTO);
+        Task<Result<string>> RegisterAsync(RegisterDTO registerDTO);
+        Task<Result<bool>> LogoutAsync(Guid userId);
+        Task<Result<string>> GeneratePasswordResetTokenAsync(string email);
+        Task<Result<bool>> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO);
+        Task<Result<bool>> ConfirmEmailAsync(string email, string token);
     }
 }

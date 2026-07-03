@@ -1,6 +1,6 @@
 ﻿using Contracts.DTOs.UserDTO;
+using Domain.Entities.IdentitMyodule;
 using Domain.Entities.IdentityModule;
-using Domain.Entities.Identityodule;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -31,6 +31,7 @@ namespace Services.AuthenticationService
             _configuration = configuration;
             _signInManager = signInManager;
         }
+
         #region Login
 
         public async Task<Result<UserDTO>> LoginAsync(LoginDTO loginDTO)
@@ -38,6 +39,9 @@ namespace Services.AuthenticationService
             var User = await _userManager.FindByEmailAsync(loginDTO.Email);
             if (User is null)
                 return Error.InvalidCrendentials("Invalid email");
+
+            if (!await _userManager.IsEmailConfirmedAsync(User))
+                return Error.InvalidCrendentials("Your email is not verified yet. Please check your inbox.");
             
             var IsPasswordValid = await _userManager.CheckPasswordAsync(User, loginDTO.Password);
             if (!IsPasswordValid)
@@ -58,11 +62,12 @@ namespace Services.AuthenticationService
 
         }
 
+
         #endregion
 
         #region Register
 
-        public async Task<Result<UserDTO>> RegisterAsync(RegisterDTO registerDTO)
+        public async Task<Result<string>> RegisterAsync(RegisterDTO registerDTO)
         {
             var userExists = await _userManager.FindByEmailAsync(registerDTO.Email);
             if (userExists != null)
@@ -90,24 +95,123 @@ namespace Services.AuthenticationService
                 return Error.InvalidCrendentials(errors);
             }
 
-            var token = await CreateTokenAsync(user);
+            var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-            return new UserDTO(
-                user.Id,
-                user.FirstName,
-                user.LastName,
-                user.Email,
-                user.PhoneNumber,
-                user.Role.ToString(),
-                token,
-                user.RefreshToken ?? string.Empty
-            );
+            var validToken = Microsoft.AspNetCore.WebUtilities.WebEncoders.
+                Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(confirmationToken));
+
+            return Result<string>.Ok(validToken);
         }
 
         #endregion
 
+        #region Logout
+
+        public async Task<Result<bool>> LogoutAsync(Guid userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user is null)
+                return Error.InvalidCrendentials("User not found");
+
+            user.RefreshToken = string.Empty;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow;
 
 
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+                return Error.InvalidCrendentials("An error occurred during logout.");
+            
+
+            await _signInManager.SignOutAsync();
+
+            return Result<bool>.Ok(true);
+
+        }
+
+        #endregion
+
+        #region Password Reset
+
+        public async Task<Result<string>> GeneratePasswordResetTokenAsync(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user is null)
+                return Error.InvalidCrendentials("Email not found.");
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var validToken = Microsoft.AspNetCore.WebUtilities.WebEncoders
+                .Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(token));
+
+            return Result<string>.Ok(validToken);
+        }
+
+        public async Task<Result<bool>> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO)
+        {
+            if (resetPasswordDTO.NewPassword != resetPasswordDTO.ConfirmNewPassword)
+                return Error.InvalidCrendentials("Passwords do not match.");
+
+            var user = await _userManager.FindByEmailAsync(resetPasswordDTO.Email);
+            if (user is null)
+                return Error.InvalidCrendentials("Email not found.");
+
+            var token = resetPasswordDTO.Token;
+            try
+            {
+                var decodedTokenBytes = Microsoft.AspNetCore.WebUtilities.WebEncoders
+                    .Base64UrlDecode(token);
+
+                token = System.Text.Encoding.UTF8.GetString(decodedTokenBytes);
+            }
+            catch
+            {
+                return Error.InvalidCrendentials("Invalid token format.");
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, token, resetPasswordDTO.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return Error.InvalidCrendentials(errors);
+            }
+
+            return Result<bool>.Ok(true);
+        }
+
+        #endregion
+
+        #region ConfirmEmail
+
+        public async Task<Result<bool>> ConfirmEmailAsync(string email, string token)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user is null)
+                return Error.InvalidCrendentials("Email not found.");
+
+            try
+            {
+                var decodedTokenBytes = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlDecode(token);
+                token = System.Text.Encoding.UTF8.GetString(decodedTokenBytes);
+            }
+            catch
+            {
+                return Error.InvalidCrendentials("Invalid confirmation token format.");
+            }
+
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+
+            if (!result.Succeeded)
+            {
+                return Error.InvalidCrendentials("Invalid or expired confirmation token.");
+            }
+
+            return Result<bool>.Ok(true);
+        }
+
+        #endregion
 
         #region Helper
 
@@ -121,6 +225,7 @@ namespace Services.AuthenticationService
             {
                 new Claim(JwtRegisteredClaimNames.Email, user.Email!),
                 new Claim(JwtRegisteredClaimNames.Name, user.UserName!),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             };
 
             var Roles = await _userManager.GetRolesAsync(user);
@@ -135,7 +240,7 @@ namespace Services.AuthenticationService
 
             var SecretKey = _configuration["JWTOptions:SecretKey"];
 
-            var Key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey));
+            var Key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey!));
 
             var Cred = new SigningCredentials(Key, SecurityAlgorithms.HmacSha256);
 
@@ -153,8 +258,6 @@ namespace Services.AuthenticationService
         }
 
         #endregion
-
-
 
     }
 }

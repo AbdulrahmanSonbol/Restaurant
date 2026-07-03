@@ -1,13 +1,16 @@
 using Contracts.Validator;
 using Domain.Contracts;
-using Domain.Entities.Identityodule;
+using Domain.Entities.IdentitMyodule;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Persistence.IdentityData.DataSeed;
 using Persistence.IdentityData.DBContexts;
 using ServiceAbstraction;
 using Services.AuthenticationService;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,22 +48,47 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 
 
 })
-.AddRoles<IdentityRole<Guid>>() 
-.AddEntityFrameworkStores<RestaurantIdentityDBContexts>();
+.AddRoles<IdentityRole<Guid>>()
+.AddEntityFrameworkStores<RestaurantIdentityDBContexts>()
+.AddDefaultTokenProviders();
+
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+
+        ValidIssuer = builder.Configuration["JWTOptions:Issuer"],
+        ValidAudience = builder.Configuration["JWTOptions:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["JWTOptions:SecretKey"]!))
+    };
+});
 
 
 
-
-
-
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 #endregion
 
 var app = builder.Build();
-
-
-
 
 
 // Configure the HTTP request pipeline.
@@ -70,6 +98,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -97,5 +126,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 #endregion
+
 
 app.Run();

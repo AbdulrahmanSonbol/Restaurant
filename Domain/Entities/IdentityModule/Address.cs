@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace Domain.Entities.Identityodule
+namespace Domain.Entities.IdentitMyodule
 {
     public class Address
     {
@@ -10,6 +11,10 @@ namespace Domain.Entities.Identityodule
         public string City { get; set; } = default!;
         public string Street { get; set; } = default!;
         public string Country { get; set; } = default!;
-       
+
+        public Guid UserId { get; set; } // Foreign Key
+
+        [ForeignKey(nameof(UserId))]
+        public User User { get; set; } = default!;
     }
 }
