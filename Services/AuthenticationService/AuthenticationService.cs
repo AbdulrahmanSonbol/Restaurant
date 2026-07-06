@@ -1,4 +1,5 @@
-﻿using Contracts.DTOs.UserDTO;
+﻿using AutoMapper;
+using Contracts.DTOs.UserDTO;
 using Domain.Entities.IdentitMyodule;
 using Domain.Entities.IdentityModule;
 using Microsoft.AspNetCore.Identity;
@@ -19,17 +20,20 @@ namespace Services.AuthenticationService
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _configuration;
         private readonly SignInManager<User> _signInManager;
+        private readonly IMapper _mapper;
 
         public AuthenticationService(
              UserManager<User> userManager,
              IConfiguration configuration,
-             SignInManager<User> signInManager
+             SignInManager<User> signInManager,
+             IMapper mapper
 
             )
         {
             _userManager = userManager;
             _configuration = configuration;
             _signInManager = signInManager;
+            _mapper = mapper;
         }
 
         #region Login
@@ -49,19 +53,8 @@ namespace Services.AuthenticationService
 
             var Token = await CreateTokenAsync(User);
 
-            return new UserDTO
-                (
-                User.Id,
-                User.FirstName,
-                User.LastName,
-                User.Email!,
-                User.PhoneNumber ?? string.Empty,
-                User.Role.ToString(),
-                Token, User.RefreshToken ?? string.Empty
-                );
-
+            return _mapper.Map<UserDTO>(User) with { Token = Token };
         }
-
 
         #endregion
 
@@ -74,18 +67,7 @@ namespace Services.AuthenticationService
                 return Error.InvalidCrendentials("Email is already registered.");
 
 
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                FirstName = registerDTO.FirstName,
-                LastName = registerDTO.LastName,
-                Email = registerDTO.Email,
-                UserName = registerDTO.Email,
-                PhoneNumber = registerDTO.PhoneNumber,
-                CreatedAt = DateTime.UtcNow,
-                IsDeleted = false,
-                Role = UserRole.User 
-            };
+            var user = _mapper.Map<User>(registerDTO);
 
             var result = await _userManager.CreateAsync(user, registerDTO.Password);
 

@@ -21,8 +21,8 @@ namespace Contracts.Validator
                 .NotEmpty().WithMessage("Email address is required.")
                 .EmailAddress().WithMessage("Invalid email address format.");
 
-            RuleFor(x => x.PhoneNumber)
-                .NotEmpty().WithMessage("Phone number is required.");
+            //RuleFor(x => x.PhoneNumber)
+            //    .NotEmpty().WithMessage("Phone number is required.");
 
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Password is required.")

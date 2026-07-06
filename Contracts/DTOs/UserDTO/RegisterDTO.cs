@@ -9,7 +9,7 @@ namespace Contracts.DTOs.UserDTO
         string FirstName,
         string LastName,
         string Email,
-        string PhoneNumber,
+        // string PhoneNumber,
         string Password,
         string ConfirmPassword);
 }

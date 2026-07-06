@@ -10,6 +10,7 @@ using Persistence.IdentityData.DataSeed;
 using Persistence.IdentityData.DBContexts;
 using ServiceAbstraction;
 using Services.AuthenticationService;
+using Services.Mapping;
 using System.Text;
 
 
@@ -85,6 +86,10 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+
+builder.Services.AddAutoMapper(cfg => 
+cfg.AddProfile<UserMapping>());
+
 
 #endregion
 
