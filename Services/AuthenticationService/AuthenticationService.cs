@@ -3,6 +3,7 @@ using Contracts.DTOs.UserDTO;
 using Domain.Entities.IdentitMyodule;
 using Domain.Entities.IdentityModule;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ServiceAbstraction;
@@ -21,12 +22,16 @@ namespace Services.AuthenticationService
         private readonly IConfiguration _configuration;
         private readonly SignInManager<User> _signInManager;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
+        private readonly IDistributedCache _distributedCache;
 
         public AuthenticationService(
              UserManager<User> userManager,
              IConfiguration configuration,
              SignInManager<User> signInManager,
-             IMapper mapper
+             IMapper mapper,
+             IEmailService emailService,
+             IDistributedCache distributedCache  
 
             )
         {
@@ -34,6 +39,8 @@ namespace Services.AuthenticationService
             _configuration = configuration;
             _signInManager = signInManager;
             _mapper = mapper;
+            _emailService = emailService;
+            _distributedCache = distributedCache;
         }
 
         #region Login
@@ -63,9 +70,8 @@ namespace Services.AuthenticationService
         public async Task<Result<string>> RegisterAsync(RegisterDTO registerDTO)
         {
             var userExists = await _userManager.FindByEmailAsync(registerDTO.Email);
-            if (userExists != null)
+            if (userExists is not null)
                 return Error.InvalidCrendentials("Email is already registered.");
-
 
             var user = _mapper.Map<User>(registerDTO);
 
@@ -77,12 +83,23 @@ namespace Services.AuthenticationService
                 return Error.InvalidCrendentials(errors);
             }
 
-            var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var otp = await GenerateAndSaveOtpAsync(user.Email!);
 
-            var validToken = Microsoft.AspNetCore.WebUtilities.WebEncoders.
-                Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(confirmationToken));
+            var emailResult = await SendOtpEmailAsync(
+                user.Email!,
+                "Verification Code - Qa3da Restaurant",
+                "Welcome to Qa3da",
+                "Thank you for registering. Use the 4-digit verification code below to activate your account:",
+                otp
+            );
 
-            return Result<string>.Ok(validToken);
+            if (!emailResult.IsSuccess)
+            {
+                var error = emailResult.Errors.First();
+                return Error.InvalidCrendentials(error.Code, error.Description);
+            }
+
+            return Result<string>.Ok("Registration successful. Please check your email for the 4-digit verification code.");
         }
 
         #endregion
@@ -99,12 +116,10 @@ namespace Services.AuthenticationService
             user.RefreshToken = string.Empty;
             user.RefreshTokenExpiryTime = DateTime.UtcNow;
 
-
             var result = await _userManager.UpdateAsync(user);
 
             if (!result.Succeeded)
                 return Error.InvalidCrendentials("An error occurred during logout.");
-            
 
             await _signInManager.SignOutAsync();
 
@@ -122,12 +137,23 @@ namespace Services.AuthenticationService
             if (user is null)
                 return Error.InvalidCrendentials("Email not found.");
 
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var otp = await GenerateAndSaveOtpAsync(email);
 
-            var validToken = Microsoft.AspNetCore.WebUtilities.WebEncoders
-                .Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(token));
+            var emailResult = await SendOtpEmailAsync(
+                  user.Email!,
+                  "Reset Password Code - Qa3da Restaurant",
+                  "Reset Password Request",
+                  "Use the 4-digit token below to reset your password:",
+                  otp
+              );    
 
-            return Result<string>.Ok(validToken);
+            if (!emailResult.IsSuccess)
+            {
+                var error = emailResult.Errors.First();
+                return Error.InvalidCrendentials(error.Code, error.Description);
+            }
+
+            return Result<string>.Ok("If the email exists, a reset code has been sent.");
         }
 
         public async Task<Result<bool>> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO)
@@ -139,26 +165,35 @@ namespace Services.AuthenticationService
             if (user is null)
                 return Error.InvalidCrendentials("Email not found.");
 
-            var token = resetPasswordDTO.Token;
-            try
-            {
-                var decodedTokenBytes = Microsoft.AspNetCore.WebUtilities.WebEncoders
-                    .Base64UrlDecode(token);
+            var cacheKey = $"otp:{resetPasswordDTO.Email}";
 
-                token = System.Text.Encoding.UTF8.GetString(decodedTokenBytes);
-            }
-            catch
+            var cachedOtp = await _distributedCache.GetStringAsync(cacheKey);
+
+            if (cachedOtp is null || cachedOtp != resetPasswordDTO.Token)
+                return Error.InvalidCrendentials("Invalid or expired reset token.");
+
+            var passwordValidator = _userManager.PasswordValidators.FirstOrDefault();
+
+            if (passwordValidator != null)
             {
-                return Error.InvalidCrendentials("Invalid token format.");
+                var validationResult = await passwordValidator.ValidateAsync(_userManager, user, resetPasswordDTO.NewPassword);
+                if (!validationResult.Succeeded)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.Description));
+                    return Error.InvalidCrendentials(errors);
+                }
             }
 
-            var result = await _userManager.ResetPasswordAsync(user, token, resetPasswordDTO.NewPassword);
+            user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, resetPasswordDTO.NewPassword);
 
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return Error.InvalidCrendentials(errors);
-            }
+            await _userManager.UpdateSecurityStampAsync(user);
+
+            var updateResult = await _userManager.UpdateAsync(user);
+
+            if (!updateResult.Succeeded)
+                return Error.InvalidCrendentials("Error updating password.");
+
+            await _distributedCache.RemoveAsync(cacheKey);
 
             return Result<bool>.Ok(true);
         }
@@ -173,22 +208,22 @@ namespace Services.AuthenticationService
             if (user is null)
                 return Error.InvalidCrendentials("Email not found.");
 
-            try
+            var cacheKey = $"otp:{email}";
+
+            var cachedOtp = await _distributedCache.GetStringAsync(cacheKey);
+
+            if (cachedOtp is null || cachedOtp != token)
             {
-                var decodedTokenBytes = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlDecode(token);
-                token = System.Text.Encoding.UTF8.GetString(decodedTokenBytes);
-            }
-            catch
-            {
-                return Error.InvalidCrendentials("Invalid confirmation token format.");
+                return Error.InvalidCrendentials("Invalid or expired verification code.");
             }
 
-            var result = await _userManager.ConfirmEmailAsync(user, token);
+            user.EmailConfirmed = true;
 
-            if (!result.Succeeded)
-            {
-                return Error.InvalidCrendentials("Invalid or expired confirmation token.");
-            }
+            await _userManager.UpdateSecurityStampAsync(user);
+
+            await _userManager.UpdateAsync(user);
+
+            await _distributedCache.RemoveAsync(cacheKey);
 
             return Result<bool>.Ok(true);
         }
@@ -237,6 +272,46 @@ namespace Services.AuthenticationService
             );
 
             return new JwtSecurityTokenHandler().WriteToken(Token);
+        }
+
+        private async Task<string> GenerateAndSaveOtpAsync(string email)
+        {
+            var random = new Random();
+            var otpCode = random.Next(1000, 9999).ToString();
+
+            var cacheKey = $"otp:{email}";
+
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15) 
+            };
+
+            await _distributedCache.SetStringAsync(cacheKey, otpCode, cacheOptions);
+
+            return otpCode;
+        }
+
+        private async Task<Result<bool>> SendOtpEmailAsync(string email, string subject, string title, string messageText, string otpCode)
+        {
+            var emailBody = $@"
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; text-align: center;'>
+            <h2 style='color: #ff5722;'>{title}</h2>
+            <p>{messageText}</p>
+            <div style='background-color: #f4f4f4; padding: 15px 30px; margin: 20px auto; width: fit-content; font-size: 32px; font-weight: bold; letter-spacing: 8px; border-radius: 5px; color: #ff5722;'>
+                {otpCode}
+            </div>
+            <p style='font-size: 12px; color: #aaa;'>This code is valid for 15 minutes.</p>
+        </div>";
+
+            try
+            {
+                await _emailService.SendEmailAsync(email, subject, emailBody);
+                return Result<bool>.Ok(true);
+            }
+            catch (Exception ex)
+            {
+                return Error.InvalidCrendentials($"Failed to send email: {ex.Message}");
+            }
         }
 
         #endregion

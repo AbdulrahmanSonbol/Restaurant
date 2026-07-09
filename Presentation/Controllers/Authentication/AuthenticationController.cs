@@ -13,14 +13,11 @@ namespace Presentation.Controllers.Authentication
     public class AuthenticationController : ApiBaseController
     {
         private readonly IAuthenticationService _authenticationService;
-        private readonly IConfiguration _configuration;
 
         public AuthenticationController(
-            IAuthenticationService authenticationService,
-            IConfiguration configuration)
+            IAuthenticationService authenticationService)
         {
             _authenticationService = authenticationService;
-            _configuration = configuration;
         }
 
         #region Login
@@ -38,8 +35,6 @@ namespace Presentation.Controllers.Authentication
 
         #region Register
 
-        // Register
-        // POST: BaseUrl/api/Authentication/register
         [HttpPost("Register")]
         public async Task<ActionResult<string>> Register(RegisterDTO registerDTO)
         {

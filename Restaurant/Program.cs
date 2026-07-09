@@ -10,7 +10,9 @@ using Persistence.IdentityData.DataSeed;
 using Persistence.IdentityData.DBContexts;
 using ServiceAbstraction;
 using Services.AuthenticationService;
+using Services.EmailService;
 using Services.Mapping;
+using StackExchange.Redis;
 using System.Text;
 
 
@@ -89,6 +91,26 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAutoMapper(cfg => 
 cfg.AddProfile<UserMapping>());
+
+builder.Services.AddTransient<IEmailService, EmailService>();
+
+var redisOptions = ConfigurationOptions.Parse(
+    builder.Configuration.GetConnectionString("RedisConnection")!
+);
+
+IConnectionMultiplexer redisMultiplexer =
+    await ConnectionMultiplexer.ConnectAsync(redisOptions);
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.ConnectionMultiplexerFactory = () =>
+        Task.FromResult(redisMultiplexer);
+});
+
+
+
 
 
 #endregion
