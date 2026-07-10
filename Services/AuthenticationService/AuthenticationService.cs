@@ -243,6 +243,8 @@ namespace Services.AuthenticationService
                 new Claim(JwtRegisteredClaimNames.Email, user.Email!),
                 new Claim(JwtRegisteredClaimNames.Name, user.UserName!),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("firstName", user.FirstName ?? string.Empty),
+                new Claim("lastName", user.LastName ?? string.Empty)
             };
 
             var Roles = await _userManager.GetRolesAsync(user);
