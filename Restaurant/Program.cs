@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Persistence.IdentityData.DataSeed;
 using Persistence.IdentityData.DBContexts;
+using Restaurant.CustomMiddlewares;
 using ServiceAbstraction;
 using Services.AuthenticationService;
 using Services.EmailService;
@@ -115,7 +116,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 var app = builder.Build();
 
-
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
