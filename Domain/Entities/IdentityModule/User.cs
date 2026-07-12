@@ -1,10 +1,9 @@
-﻿using Domain.Entities.IdentityModule;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Entities.IdentitMyodule
+namespace Domain.Entities.IdentityModule
 {
     public class User : IdentityUser<Guid>
     {

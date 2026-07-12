@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Contracts.DTOs.UserDTO;
-using Domain.Entities.IdentitMyodule;
 using Domain.Entities.IdentityModule;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Caching.Distributed;

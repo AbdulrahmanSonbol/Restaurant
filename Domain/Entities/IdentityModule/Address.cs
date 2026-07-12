@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace Domain.Entities.IdentitMyodule
+namespace Domain.Entities.IdentityModule
 {
     public class Address
     {

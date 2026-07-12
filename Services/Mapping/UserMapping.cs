@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Contracts.DTOs.UserDTO;
-using Domain.Entities.IdentitMyodule;
 using Domain.Entities.IdentityModule;
 using System;
 using System.Collections.Generic;

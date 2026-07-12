@@ -1,6 +1,6 @@
 using Contracts.Validator;
 using Domain.Contracts;
-using Domain.Entities.IdentitMyodule;
+using Domain.Entities.IdentityModule;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using Persistence.IdentityData.DataSeed;
 using Persistence.IdentityData.DBContexts;
 using Restaurant.CustomMiddlewares;
+using Persistence.Repositories;
+
 using ServiceAbstraction;
 using Services.AuthenticationService;
 using Services.EmailService;
@@ -18,7 +20,6 @@ using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 // Add services to the container.
 
@@ -113,6 +114,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 
 #endregion
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
 var app = builder.Build();
 

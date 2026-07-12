@@ -1,4 +1,4 @@
-﻿using Domain.Entities.IdentitMyodule;
+﻿using Domain.Entities.IdentityModule;
 using Domain.Entities.RestaurantModule;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -23,6 +23,8 @@ namespace Persistence.IdentityData.DBContexts
             builder.Entity<User>().ToTable("Users");
             builder.Entity<IdentityRole<Guid>>().ToTable("Roles");
             builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+
+
         }
 
 

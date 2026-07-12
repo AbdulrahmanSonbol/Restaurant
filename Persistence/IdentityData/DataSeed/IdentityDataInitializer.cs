@@ -1,5 +1,5 @@
 ﻿using Domain.Contracts;
-using Domain.Entities.IdentitMyodule;   
+using Domain.Entities.IdentityModule;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using System;
