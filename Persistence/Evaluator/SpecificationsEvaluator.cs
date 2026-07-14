@@ -17,6 +17,19 @@ namespace Persistence.Evaluator
             if (specifications is not null)
             {
 
+                #region Tracking & NoTracking
+
+                if (specifications.IsAsNoTracking)
+                {
+                    Query = Query.AsNoTracking();
+                }
+                else
+                {
+                    Query = Query.AsTracking();
+                }
+
+                #endregion
+
                 #region Criteria
 
                 if (specifications.Criteria is not null)
@@ -28,9 +41,9 @@ namespace Persistence.Evaluator
 
                 #region Include
 
-                if (specifications.IncludeExperessions is not null && specifications.IncludeExperessions.Any())
+                if (specifications.Include is not null && specifications.Include.Any())
                 {
-                    foreach (var includeExp in specifications.IncludeExperessions)
+                    foreach (var includeExp in specifications.Include)
                     {
                         Query = Query.Include(includeExp);
                     }

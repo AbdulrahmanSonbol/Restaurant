@@ -8,44 +8,86 @@ namespace Persistence.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly RestaurantIdentityDBContexts _context;
+    private readonly RestaurantIdentityDBContexts _dbContext;
+    private readonly Dictionary<string, object> _repositories = new();
     private IDbContextTransaction? _transaction;
 
-    public UnitOfWork(RestaurantIdentityDBContexts context)
+    public UnitOfWork(RestaurantIdentityDBContexts dbContext)
     {
-        _context = context;
+        _dbContext = dbContext;
     }
 
-    public async Task BeginTransactionAsync()
+    public IGenericRepository<TEntity, TKey> GetRepository<TEntity, TKey>() where TEntity : class
     {
-        _transaction = await _context.Database.BeginTransactionAsync();
+        var key = $"{typeof(TEntity).Name}_{typeof(TKey).Name}";
+
+        if (!_repositories.ContainsKey(key))
+        {
+            var repositoryInstance = new GenericRepository<TEntity, TKey>(_dbContext);
+            _repositories.Add(key, repositoryInstance);
+        }
+
+        return (IGenericRepository<TEntity, TKey>)_repositories[key];
     }
 
-    public async Task CommitAsync()
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        _transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public async Task CommitAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (_transaction != null)
+            {
+                await _transaction.CommitAsync(cancellationToken);
+            }
+        }
+        catch
+        {
+            await RollbackAsync(cancellationToken);
+            throw;
+        }
+        finally
+        {
+            if (_transaction != null)
+            {
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
+        }
+    }
+
+    public async Task RollbackAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction != null)
         {
-            await _transaction.CommitAsync();
+            await _transaction.RollbackAsync(cancellationToken);
             await _transaction.DisposeAsync();
+            _transaction = null;
         }
     }
 
     public void Dispose()
     {
-        _context.Dispose();
+        _dbContext.Dispose();
+        _transaction?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
-    public async Task RollbackAsync()
+    public async ValueTask DisposeAsync()
     {
+        await _dbContext.DisposeAsync();
         if (_transaction != null)
         {
-            await _transaction.RollbackAsync();
             await _transaction.DisposeAsync();
         }
-    }
-
-    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.SaveChangesAsync(cancellationToken);
+        GC.SuppressFinalize(this);
     }
 }

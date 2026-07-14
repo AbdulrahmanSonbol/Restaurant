@@ -11,12 +11,12 @@ namespace Services.Specifications
 
         #region Include
 
-        public ICollection<Expression<Func<TEntity, object>>> IncludeExperessions { get; } = [];
+        public ICollection<Expression<Func<TEntity, object>>> Include { get; } = [];
 
 
         protected void AddInclude(Expression<Func<TEntity, object>> IncludeExp)
         {
-            IncludeExperessions.Add(IncludeExp);
+            Include.Add(IncludeExp);
         }
 
         #endregion
@@ -67,6 +67,16 @@ namespace Services.Specifications
 
         #endregion
 
+        #region NoTracking
+
+        public bool IsAsNoTracking { get; private set; } = true;
+        
+        protected void DisableNoTracking()
+        {
+            IsAsNoTracking = false;
+        }
+        
+        #endregion
 
     }
 }

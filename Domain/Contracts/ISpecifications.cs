@@ -7,7 +7,7 @@ namespace Domain.Contracts
 {
     public interface ISpecifications<TEntity, TKey>
     {
-        public ICollection<Expression<Func<TEntity, object>>> IncludeExperessions { get; }
+        public ICollection<Expression<Func<TEntity, object>>> Include { get; }
 
         public Expression<Func<TEntity, bool>> Criteria { get; }
 
@@ -20,5 +20,8 @@ namespace Domain.Contracts
         public int Skip { get; }
 
         public bool IsPaginated { get; }
+
+        public bool IsAsNoTracking { get; }
+
     }
 }
