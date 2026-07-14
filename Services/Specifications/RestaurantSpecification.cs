@@ -10,17 +10,15 @@ namespace Services.Specifications
     public class RestaurantSpecification : BaseSpecifications<Restaurant, int>
     {
         public RestaurantSpecification(RestaurantQueryParams queryParams)
-            : base(x =>
-                string.IsNullOrEmpty(queryParams.Search) ||
-                x.Name.ToLower().Contains(queryParams.Search.ToLower()) ||
-                x.Category.ToLower().Contains(queryParams.Search.ToLower())
-            )
+      : base(x =>
+          string.IsNullOrWhiteSpace(queryParams.Search) ||
+          x.Name.ToLower().Contains(queryParams.Search.ToLower()))
         {
             ApplyPagination(queryParams.PageSize, queryParams.PageIndex);
 
             if (queryParams.Sort == RestaurantSortingOptions.RateDesc)
             {
-                AddOrderByDescending(x => x.Rating);
+                AddOrderByDescending(x => x.AverageRating);
             }
             else
             {

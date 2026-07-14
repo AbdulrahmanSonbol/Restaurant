@@ -9,25 +9,26 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities.RestaurantModule
 {
-    public class Review
+    public class Payment
     {
         public int Id { get; set; }
 
-        public int Rating { get; set; }
+        public decimal Amount { get; set; }
 
-        public string? Comment { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
+        public PaymentStatus PaymentStatus { get; set; }
+
+        public string ReceiptImage { get; set; } = null!;
+
+        public Guid? VerifiedByUserId { get; set; }
+        public User? VerifiedByUser { get; set; }
 
         public DateTime CreatedAt { get; set; }
-
-        public Guid UserId { get; set; } 
-        public User User { get; set; } = null!;
-
-        public int RestaurantId { get; set; }
-        public Restaurant Restaurant { get; set; } = null!;
 
         public int ReservationId { get; set; }
         public Reservation Reservation { get; set; } = null!;
         [Timestamp]
         public byte[] RowVersion { get; set; } = default!;
     }
+
 }

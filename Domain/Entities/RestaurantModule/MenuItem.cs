@@ -9,32 +9,26 @@ namespace Domain.Entities.RestaurantModule
 {
     public class MenuItem
     {
-		
-		public int Id { get; set;  }
+        public int Id { get; set; }
 
-
-        public string Name { get; set; } = string.Empty;
-        public int RestaurantId { get; set; }
-
-        public string? Description { get; set; }
+        public string Name { get; set; } = null!;
+        public string Description { get; set; } = null!;
 
         public decimal Price { get; set; }
+        public int PreparationTime { get; set; }
 
-        public string? ImageUrl { get; set; }
+        public bool IsAvailable { get; set; }
+        public bool IsPopular { get; set; }
+        public bool IsNew { get; set; }
 
-        public bool IsAvailable { get; set; } = true;
+        public string ImageUrl { get; set; } = null!;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-       
+        public int RestaurantId { get; set; }
         public Restaurant Restaurant { get; set; } = null!;
+
+        public int CategoryId { get; set; }
+        public MenuCategory Category { get; set; } = null!;
         [Timestamp]
         public byte[] RowVersion { get; set; } = default!;
-
-
-        //  public string Category { get; set;  }
-
-
-
     }
 }

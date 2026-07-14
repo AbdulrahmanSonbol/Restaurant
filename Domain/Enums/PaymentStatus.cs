@@ -4,12 +4,11 @@ using System.Text;
 
 namespace Domain.Enums
 {
-    public enum ReservationStatus
+    public enum PaymentStatus
     {
         Pending = 1,
-        Confirmed = 2,
-        Completed = 3,
-        Cancelled = 4,
-        NoShow = 5
+        Verified = 2,
+        Rejected = 3,
+        Refunded = 4
     }
 }

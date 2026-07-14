@@ -7,10 +7,12 @@ using System.Text;
 
 namespace Services.Specifications
 {
-    public class RestaurantWithFiltersAndPaginationSpecification : BaseSpecifications<Restaurant, int>
+    public class RestaurantWithFiltersAndPaginationSpecification
+    : BaseSpecifications<Restaurant, int>
     {
         public RestaurantWithFiltersAndPaginationSpecification(RestaurantQueryParams queryParams)
-        : base(r => string.IsNullOrEmpty(queryParams.Search) || r.Name.Contains(queryParams.Search))
+            : base(r => string.IsNullOrWhiteSpace(queryParams.Search)
+                || r.Name.Contains(queryParams.Search))
         {
             ApplyPagination(queryParams.PageSize, queryParams.PageIndex);
 
@@ -21,7 +23,7 @@ namespace Services.Specifications
                     break;
 
                 case RestaurantSortingOptions.RateDesc:
-                    AddOrderByDescending(r => r.Rating);
+                    AddOrderByDescending(r => r.AverageRating);
                     break;
 
                 case RestaurantSortingOptions.NameAsc:
