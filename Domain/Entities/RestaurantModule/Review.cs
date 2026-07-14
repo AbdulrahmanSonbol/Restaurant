@@ -13,6 +13,7 @@ namespace Domain.Entities.RestaurantModule
     {
         public int Id { get; set; }
 
+        [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5.")] 
         public int Rating { get; set; }
 
         public string? Comment { get; set; }
@@ -21,9 +22,6 @@ namespace Domain.Entities.RestaurantModule
 
         public Guid UserId { get; set; } 
         public User User { get; set; } = null!;
-
-        public int RestaurantId { get; set; }
-        public Restaurant Restaurant { get; set; } = null!;
 
         public int ReservationId { get; set; }
         public Reservation Reservation { get; set; } = null!;
