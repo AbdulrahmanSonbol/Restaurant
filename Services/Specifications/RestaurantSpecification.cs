@@ -1,13 +1,13 @@
 ﻿using Contracts.QueryParameters;
 using Contracts.Sorting;
-using Domain.Entities.RestaurantModule;
+using RestaurantEntity = Domain.Entities.RestaurantModule.Restaurant;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Services.Specifications
 {
-    public class RestaurantSpecification : BaseSpecifications<Restaurant, int>
+    public class RestaurantSpecification : BaseSpecifications<RestaurantEntity, int>
     {
         public RestaurantSpecification(RestaurantQueryParams queryParams)
       : base(x =>

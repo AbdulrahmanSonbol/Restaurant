@@ -31,7 +31,7 @@ namespace Restaurant.CustomMiddlewares
                 var problem = new ProblemDetails()
                 {
                     Title = "Error while processing HTTP request",
-                    Detail = ex.Message,
+                    Detail = ex.InnerException?.Message ?? ex.Message,
                     Instance = httpContext.Request.Path,
                     Status = ex switch
                     {

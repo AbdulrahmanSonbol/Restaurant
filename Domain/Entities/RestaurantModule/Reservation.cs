@@ -33,6 +33,9 @@ namespace Domain.Entities.RestaurantModule
         public int RestaurantId { get; set; }
         public Restaurant Restaurant { get; set; } = null!;
 
+        public string? FcmToken { get; set; }
+        public bool IsNotificationSent { get; set; } = false;
+
         public int RestaurantTableId { get; set; }
         public RestaurantTable RestaurantTable { get; set; } = null!;
 

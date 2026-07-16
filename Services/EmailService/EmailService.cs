@@ -21,7 +21,12 @@ namespace Services.EmailService
         public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
         {
             var email = new MimeMessage();
-            email.From.Add(new MailboxAddress("qa3da", _configuration["MailSettings:Email"]));
+            var senderEmail = _configuration["MailSettings:Email"] ?? "";
+            var host = _configuration["MailSettings:Host"] ?? "";
+            var port = int.Parse(_configuration["MailSettings:Port"]!);
+            var password = _configuration["MailSettings:Password"] ?? string.Empty;
+
+            email.From.Add(new MailboxAddress("qa3da", senderEmail));
             email.To.Add(MailboxAddress.Parse(toEmail));
 
             email.Subject = subject;
@@ -37,18 +42,9 @@ namespace Services.EmailService
 
             try
             {
-               await smtp.ConnectAsync(
-                    _configuration["MailSettings:Host"],
-                    int.Parse(_configuration["MailSettings:Port"]),
-                    SecureSocketOptions.StartTls
-                );
-
-               await smtp.AuthenticateAsync(
-                    _configuration["MailSettings:Email"],
-                    _configuration["MailSettings:Password"]
-                );
-
-               await smtp.SendAsync(email);
+                await smtp.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(senderEmail, password);
+                await smtp.SendAsync(email);
             }
             catch (Exception ex)
             {

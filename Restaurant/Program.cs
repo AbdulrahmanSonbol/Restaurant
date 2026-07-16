@@ -1,20 +1,25 @@
 using Contracts.Validator;
 using Domain.Contracts;
 using Domain.Entities.IdentityModule;
+using FirebaseAdmin;
 using FluentValidation;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Persistence.BackgroundJobs;
 using Persistence.IdentityData.DataSeed;
 using Persistence.IdentityData.DBContexts;
-using Restaurant.CustomMiddlewares;
 using Persistence.Repositories;
-
+using Restaurant.CustomMiddlewares;
 using ServiceAbstraction;
 using Services.AuthenticationService;
 using Services.EmailService;
 using Services.Mapping;
+using Services.Notification;
+using Services.Restaurant;
 using StackExchange.Redis;
 using System.Text;
 
@@ -91,8 +96,12 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddAutoMapper(cfg => 
-cfg.AddProfile<UserMapping>());
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<UserMapping>();
+    cfg.AddProfile<ReservationMapping>();
+});
+
 
 builder.Services.AddTransient<IEmailService, EmailService>();
 
@@ -111,10 +120,26 @@ builder.Services.AddStackExchangeRedisCache(options =>
         Task.FromResult(redisMultiplexer);
 });
 
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+builder.Services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
 
+//using (var stream = new FileStream("firebase-config.json", FileMode.Open, FileAccess.Read))
+//{
+//    var googleCredential = CredentialFactory.FromStream<GoogleCredential>(stream);
+
+//    FirebaseApp.Create(new AppOptions()
+//    {
+//        Credential = googleCredential
+//    });
+//}
+
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+builder.Services.AddHostedService<ReservationReminderBackgroundJob>();
+
+builder.Services.AddScoped<IReservationService, ReservationService>();
 #endregion
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
 var app = builder.Build();
 

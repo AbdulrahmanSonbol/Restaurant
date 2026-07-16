@@ -1,8 +1,5 @@
 ﻿using Domain.Contracts;
-using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace Services.Specifications
 {
@@ -34,8 +31,8 @@ namespace Services.Specifications
 
         #region Sorting
 
-        public Expression<Func<TEntity, object>> OrderBy { get; private set; }
-        public Expression<Func<TEntity, object>> OrderByDescending { get; private set; }
+        public Expression<Func<TEntity, object>>? OrderBy { get; private set; }
+        public Expression<Func<TEntity, object>>? OrderByDescending { get; private set; }
 
         protected void AddOrderBy(Expression<Func<TEntity, object>> orderByExpression)
         {

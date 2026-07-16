@@ -31,7 +31,7 @@ namespace Domain.Entities.RestaurantModule
         public double Latitude { get; set; }
         public double Longitude { get; set; }
 
-        public string PriceRange { get; set; }
+        public string PriceRange { get; set; } = null!;
 
         public int ReservationDurationMinutes { get; set; }
 
